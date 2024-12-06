@@ -8,134 +8,167 @@ const engine = new BABYLON.Engine(canvas, true);
 const createScene = function () {
     const scene = new BABYLON.Scene(engine);
 
-    // Enable physics in the scene
-    const gravityVector = new BABYLON.Vector3(0, -9.81, 0);
+    // Enable physics in the scene with a lower gravity vector
+    const gravityVector = new BABYLON.Vector3(0, -4, 0);  // Reduced gravity
     const physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(gravityVector, physicsPlugin);
 
-    // Create ground with thickness
-    const ground = BABYLON.MeshBuilder.CreateBox("ground", { width: 150, depth: 200, height: 2 }, scene);
-    ground.position.y = -1; // Lower the ground so its top is at y = 0
+    // =======================
+    // Création de ground2 Octogonal
+    // =======================
+    const octagonSides = 8;
+    const octagonRadius = 80; // Rayon de l'octogone
+    const ground2Thickness = 2; // Épaisseur de ground2
+    
+    // Créer ground2 en utilisant CreateCylinder avec 8 côtés pour un octogone parfait
+    const ground2 = BABYLON.MeshBuilder.CreateCylinder("ground2", {
+        diameter: 2 * octagonRadius * 1.08, // Diamètre basé sur le rayon
+        height: ground2Thickness,
+        tessellation: octagonSides, // 8 côtés pour un octogone
+        sideOrientation: BABYLON.Mesh.DOUBLESIDE // Pour que les deux faces soient visibles
+    }, scene);
 
-    // Create a material for the ground
-    const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
+    // Positionner ground2 légèrement au-dessus du sol existant
+    ground2.position.y = ground2Thickness / 2 + 0.1;
 
-    // Load and apply a texture to the ground material
-    groundMaterial.diffuseTexture = new BABYLON.Texture("src/textures/rock.jpg", scene); // Replace with your texture file path
+    // Appliquer une rotation de 45 degrés autour de l'axe Y
+    ground2.rotation.y = BABYLON.Tools.ToRadians(22.5);
 
-    // Assign the material to the ground
-    ground.material = groundMaterial;
+    // Créer un matériau pour ground2
+    const ground2Material = new BABYLON.StandardMaterial("ground2Material", scene);
+    ground2Material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5); // Couleur grise, ajustez selon vos besoins
+    ground2.material = ground2Material;
 
-    ground.physicsImpostor = new BABYLON.PhysicsImpostor(
-        ground,
-        BABYLON.PhysicsImpostor.BoxImpostor,
-        { mass: 0, restitution: 0.5, friction: 0.5 },
-        scene
+    // Appliquer l'imposteur de physique à ground2 avec moins de restitution et de friction
+    ground2.physicsImpostor = new BABYLON.PhysicsImpostor(
+        ground2,
+        BABYLON.PhysicsImpostor.CylinderImpostor,
+        { mass: 0, restitution: 0.3, friction: 0.2 },  // Lower restitution and friction
+        scene,
     );
-    ground.checkCollisions = true;
+    ground2.checkCollisions = true;
 
-    // Create a light
+    // =======================
+    // Création des Murs Autour de ground2 Octogonal
+    // =======================
+    const wallHeight = 5; // Hauteur des murs
+    const wallThickness = 1; // Épaisseur des murs
+
+    // Calculer la longueur d'un côté de l'octogone
+    const sideLength = 2 * octagonRadius * Math.sin(Math.PI / octagonSides) + 5; // s = 2r sin(π/n)
+
+    // Paramètres de l'octogone
+    const wallAngleIncrement = (2 * Math.PI) / octagonSides; // 45 degrés pour un octogone
+
+    // Créer les 8 murs autour de ground2
+    for (let i = 0; i < octagonSides; i++) {
+        const angle = i * wallAngleIncrement; // Rotation de 45 degrés pour chaque côté
+        const x = octagonRadius * Math.sin(angle); // Calculer la position x
+        const z = octagonRadius * Math.cos(angle); // Calculer la position z
+        const rotation = 0 + angle + Math.PI; // Ajuster la rotation pour le mur
+
+        const wall = BABYLON.MeshBuilder.CreateBox(
+            `wall2_${i}`,
+            { width: sideLength, height: wallHeight, depth: wallThickness },
+            scene
+        );
+
+        // Positionner le mur
+        wall.position = new BABYLON.Vector3(x, wallHeight / 2, z);
+
+        // Rotation du mur
+        wall.rotation.y = rotation ;
+
+        // Appliquer le matériau au mur
+        wall.material = ground2Material;
+
+        // Appliquer la physique au mur avec moins de restitution et de friction
+        wall.physicsImpostor = new BABYLON.PhysicsImpostor(
+            wall,
+            BABYLON.PhysicsImpostor.BoxImpostor,
+            { mass: 0, restitution: 0.3, friction: 0.2 },  // Lower restitution and friction
+            scene
+        );
+        wall.checkCollisions = true;
+    }
+
+    // =======================
+    // Création de la Lumière
+    // =======================
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
     light.intensity = 0.9;
 
-    // Create a camera
+    // =======================
+    // Création de la Caméra
+    // =======================
     const camera = new BABYLON.ArcRotateCamera(
         "ArcRotateCamera",
         BABYLON.Tools.ToRadians(45),
         BABYLON.Tools.ToRadians(60),
-        200,
+        300, // Augmenté pour voir les deux grounds
         new BABYLON.Vector3(0, 0, 0),
         scene
     );
     camera.attachControl(canvas, true);
 
-    // Create players (basic spheres)
-    const player1 = BABYLON.MeshBuilder.CreateSphere("player1", { diameter: 2 }, scene);
-    player1.position = new BABYLON.Vector3(-10, 1, 0);
-    const player1Material = new BABYLON.StandardMaterial("player1Material", scene);
-    player1Material.diffuseColor = BABYLON.Color3.Blue();
-    player1.material = player1Material;
+    // =======================
+    // Création des Joueurs (Sphères de Base)
+    // =======================
+    const createPlayer = (name, position, color) => {
+        const player = BABYLON.MeshBuilder.CreateSphere(name, { diameter: 2 }, scene);
+        player.position = position;
+        const playerMaterial = new BABYLON.StandardMaterial(`${name}Material`, scene);
+        playerMaterial.diffuseColor = color;
+        player.material = playerMaterial;
 
-    const player2 = BABYLON.MeshBuilder.CreateSphere("player2", { diameter: 2 }, scene);
-    player2.position = new BABYLON.Vector3(10, 1, 0);
-    const player2Material = new BABYLON.StandardMaterial("player2Material", scene);
-    player2Material.diffuseColor = BABYLON.Color3.Red();
-    player2.material = player2Material;
-
-    // Apply physics to players
-    [player1, player2].forEach(player => {
+        // Appliquer la physique au joueur avec moins de restitution et de friction
         player.physicsImpostor = new BABYLON.PhysicsImpostor(
             player,
             BABYLON.PhysicsImpostor.SphereImpostor,
-            { mass: 1, restitution: 0.9, friction: 0.5 },
+            { mass: 1, restitution: 0.3, friction: 0.2 },  // Lower restitution and friction
             scene
         );
-    });
 
-    // Create a skybox
-    const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:1000}, scene);
-    const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+        player.checkCollisions = true;  // Assure that the player can collide with other objects
+
+        return player;
+    };
+
+    // Positionner les joueurs **au-dessus** de l'octogone
+    const player1 = createPlayer("player1", new BABYLON.Vector3(-10, ground2.position.y + 2, 0), BABYLON.Color3.Blue());
+    const player2 = createPlayer("player2", new BABYLON.Vector3(10, ground2.position.y + 2, 0), BABYLON.Color3.Red());
+
+    // =======================
+    // Création du Skybox
+    // =======================
+    const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000 }, scene);
+    const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxMaterial", scene);
     skyboxMaterial.backFaceCulling = false;
-    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("src/textures/skybox/skybox", scene);
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("src/textures/skybox/skybox", scene); // Assurez-vous que le chemin est correct
     skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
     skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
     skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
     skybox.material = skyboxMaterial;
 
+    // Limiter l'angle de la caméra
     camera.upperBetaLimit = Math.PI / 2.2;
 
-    const groundWidth = 150; // Width of the ground
-    const groundDepth = 200; // Depth of the ground
-    const wallHeight = 5; // Height of the walls
-    const wallThickness = 1; // Thickness of the walls
-    
-    // Create the 4 walls (4 sides of a rectangle)
-    const wallPositions = [
-        { x: 0, z: -groundDepth / 2, rotation: 0, width: groundWidth }, // Bottom wall
-        { x: 0, z: groundDepth / 2, rotation: Math.PI, width: groundWidth }, // Top wall
-        { x: -groundWidth / 2, z: 0, rotation: Math.PI / 2, width: groundDepth }, // Left wall
-        { x: groundWidth / 2, z: 0, rotation: -Math.PI / 2, width: groundDepth }, // Right wall
-    ];
-    
-    // Create each wall
-    wallPositions.forEach((position, index) => {
-        const wall = BABYLON.MeshBuilder.CreateBox(
-            "wall" + index,
-            { width: position.width, height: wallHeight, depth: wallThickness },
-            scene
-        );
-
-        // Position the wall
-        wall.position = new BABYLON.Vector3(position.x, wallHeight / 2, position.z);
-
-        // Rotate the wall to align correctly
-        wall.rotation.y = position.rotation;
-
-        // Apply the material to the wall
-        wall.material = groundMaterial;
-
-        // Apply physics to the wall
-        wall.physicsImpostor = new BABYLON.PhysicsImpostor(
-            wall,
-            BABYLON.PhysicsImpostor.BoxImpostor,
-            { mass: 0, restitution: 0.5, friction: 0.8 },
-            scene
-        );
-    });
-
+    // =======================
+    // Retour de la Scène
+    // =======================
     return scene;
 };
 
-// Create the scene
+// Créer la scène
 const scene = createScene();
 scene.clearColor = new BABYLON.Color4(0, 0, 0, 1);
 
-// Start the render loop
+// Démarrer la boucle de rendu
 engine.runRenderLoop(() => {
     scene.render();
 });
 
-// Resize the engine when the window is resized
+// Redimensionner le moteur lorsque la fenêtre est redimensionnée
 window.addEventListener("resize", () => {
     engine.resize();
 });
