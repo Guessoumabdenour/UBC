@@ -4,6 +4,8 @@ const canvas = document.getElementById("renderCanvas");
 // Create the Babylon engine
 const engine = new BABYLON.Engine(canvas, true);
 
+
+
 // Function to create the scene
 const createScene = function () {
     const scene = new BABYLON.Scene(engine);
@@ -13,14 +15,7 @@ const createScene = function () {
     const physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(gravityVector, physicsPlugin);
 
-const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:150}, scene);
-const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
-skyboxMaterial.backFaceCulling = false;
-skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("src/textures/skybox/skybox", scene);
-skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
-skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-skybox.material = skyboxMaterial;
+
 
 
 
@@ -79,6 +74,18 @@ skybox.material = skyboxMaterial;
             scene
         );
     });
+
+const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:1000}, scene);
+const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+skyboxMaterial.backFaceCulling = false;
+skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("src/textures/skybox/skybox", scene);
+skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+skybox.material = skyboxMaterial;
+
+camera.upperBetaLimit = Math.PI / 2.2;
+
 
     const R = 50; // Radius of the octagon
     const wallHeight = 5; // Height of the walls
