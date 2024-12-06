@@ -4,8 +4,6 @@ const canvas = document.getElementById("renderCanvas");
 // Create the Babylon engine
 const engine = new BABYLON.Engine(canvas, true);
 
-
-
 // Function to create the scene
 const createScene = function () {
     const scene = new BABYLON.Scene(engine);
@@ -15,17 +13,17 @@ const createScene = function () {
     const physicsPlugin = new BABYLON.CannonJSPlugin();
     scene.enablePhysics(gravityVector, physicsPlugin);
 
-
-
-
-
     // Create ground with thickness
-    const ground = BABYLON.MeshBuilder.CreateBox("ground", { width: 150, depth: 200, height: 1 }, scene);
-    ground.position.y = -0.5; // Lower the ground so its top is at y = 0
+    const ground = BABYLON.MeshBuilder.CreateBox("ground", { width: 150, depth: 200, height: 2 }, scene);
+    ground.position.y = -1; // Lower the ground so its top is at y = 0
 
-    // Apply simple color to the ground
+    // Create a material for the ground
     const groundMaterial = new BABYLON.StandardMaterial("groundMaterial", scene);
-    groundMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5); // Grey color for the ground
+
+    // Load and apply a texture to the ground material
+    groundMaterial.diffuseTexture = new BABYLON.Texture("src/textures/rock.jpg", scene); // Replace with your texture file path
+
+    // Assign the material to the ground
     ground.material = groundMaterial;
 
     ground.physicsImpostor = new BABYLON.PhysicsImpostor(
@@ -35,7 +33,6 @@ const createScene = function () {
         scene
     );
     ground.checkCollisions = true;
-
 
     // Create a light
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
@@ -75,47 +72,48 @@ const createScene = function () {
         );
     });
 
-const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:1000}, scene);
-const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
-skyboxMaterial.backFaceCulling = false;
-skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("src/textures/skybox/skybox", scene);
-skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
-skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
-skybox.material = skyboxMaterial;
+    // Create a skybox
+    const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:1000}, scene);
+    const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("src/textures/skybox/skybox", scene);
+    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+    skybox.material = skyboxMaterial;
 
-camera.upperBetaLimit = Math.PI / 2.2;
+    camera.upperBetaLimit = Math.PI / 2.2;
 
-
-    const R = 50; // Radius of the octagon
+    const groundWidth = 150; // Width of the ground
+    const groundDepth = 200; // Depth of the ground
     const wallHeight = 5; // Height of the walls
     const wallThickness = 1; // Thickness of the walls
-    const wallLength = 10; // Length of each straight wall
-    const angleStep = Math.PI / 4; // 45 degrees for each side of the octagon
     
-    // Create the walls for the octagon (8 sides)
-    for (let i = 0; i < 8; i++) {
-        // Calculate the center position for each wall (using polar coordinates)
-        const angle = i * angleStep;
-        const x = R * Math.cos(angle);  // Position in x
-        const z = R * Math.sin(angle);  // Position in z
+    // Create the 4 walls (4 sides of a rectangle)
+    const wallPositions = [
+        { x: 0, z: -groundDepth / 2, rotation: 0, width: groundWidth }, // Bottom wall
+        { x: 0, z: groundDepth / 2, rotation: Math.PI, width: groundWidth }, // Top wall
+        { x: -groundWidth / 2, z: 0, rotation: Math.PI / 2, width: groundDepth }, // Left wall
+        { x: groundWidth / 2, z: 0, rotation: -Math.PI / 2, width: groundDepth }, // Right wall
+    ];
     
-        // Create the wall mesh
+    // Create each wall
+    wallPositions.forEach((position, index) => {
         const wall = BABYLON.MeshBuilder.CreateBox(
-            "wall" + i,
-            { width: wallLength, height: wallHeight, depth: wallThickness },
+            "wall" + index,
+            { width: position.width, height: wallHeight, depth: wallThickness },
             scene
         );
-    
-        // Position the wall correctly along the perimeter
-        wall.position = new BABYLON.Vector3(x, wallHeight / 2, z);
-    
-        // Rotate the wall to align with the octagon edges
-        wall.rotation.y = angle + Math.PI / 8;  // Rotate the wall to face the correct direction
-    
+
+        // Position the wall
+        wall.position = new BABYLON.Vector3(position.x, wallHeight / 2, position.z);
+
+        // Rotate the wall to align correctly
+        wall.rotation.y = position.rotation;
+
         // Apply the material to the wall
         wall.material = groundMaterial;
-    
+
         // Apply physics to the wall
         wall.physicsImpostor = new BABYLON.PhysicsImpostor(
             wall,
@@ -123,11 +121,7 @@ camera.upperBetaLimit = Math.PI / 2.2;
             { mass: 0, restitution: 0.5, friction: 0.8 },
             scene
         );
-    }
-    
-    
-
-    
+    });
 
     return scene;
 };
