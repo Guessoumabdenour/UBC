@@ -34,10 +34,22 @@ const createScene = function () {
     // Appliquer une rotation de 45 degrés autour de l'axe Y
     ground2.rotation.y = BABYLON.Tools.ToRadians(22.5);
 
-    // Créer un matériau pour ground2
-    const ground2Material = new BABYLON.StandardMaterial("ground2Material", scene);
-    ground2Material.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5); // Couleur grise, ajustez selon vos besoins
-    ground2.material = ground2Material;
+    // =======================
+// Appliquer la texture au matériau de ground2
+// =======================
+const ground2Material = new BABYLON.StandardMaterial("ground2Material", scene);
+
+// Charger la texture depuis le dossier 'textures'
+ground2Material.diffuseTexture = new BABYLON.Texture("src/textures/metal.jpg", scene); // Remplacez 'yourTexture.jpg' par le nom de votre texture
+
+// Appliquer le matériau au sol octogonal
+ground2.material = ground2Material;
+
+
+// Si nécessaire, ajuster le tiling de la texture
+ground2Material.diffuseTexture.uScale = 2000; // Répéter la texture horizontalement
+ground2Material.diffuseTexture.vScale = 2000; // Répéter la texture verticalement
+
 
     // Appliquer l'imposteur de physique à ground2 avec moins de restitution et de friction
     ground2.physicsImpostor = new BABYLON.PhysicsImpostor(
@@ -51,7 +63,7 @@ const createScene = function () {
     // =======================
     // Création des Murs Autour de ground2 Octogonal
     // =======================
-    const wallHeight = 5; // Hauteur des murs
+    const wallHeight = 10; // Hauteur des murs
     const wallThickness = 1; // Épaisseur des murs
 
     // Calculer la longueur d'un côté de l'octogone
@@ -91,6 +103,31 @@ const createScene = function () {
         );
         wall.checkCollisions = true;
     }
+
+    
+    // =======================
+    // Création du Logo au centre de l'arène
+    // =======================
+    const logoWidth = 120;  // Desired width of the logo
+    const logoHeight = logoWidth * (213 / 500);  // Adjust height based on aspect ratio
+
+    const logo = BABYLON.MeshBuilder.CreatePlane("logo", {
+        width: logoWidth,
+        height: logoHeight
+    }, scene); // Adjusted to match the logo's aspect ratio
+    logo.position.y = ground2.position.y + ground2Thickness / 2 + 0.2;  // Placer légèrement au-dessus du sol
+    logo.position.z = 0;  // Placer au centre en Z
+    logo.position.x = 0;  // Placer au centre en X
+
+    // Ajuster la rotation du logo pour qu'il soit à plat avec l'arène
+    logo.rotation.x = Math.PI / 2;  // Rotation de 90 degrés autour de l'axe X pour être à plat
+
+    const logoMaterial = new BABYLON.StandardMaterial("logoMaterial", scene);
+    logoMaterial.diffuseTexture = new BABYLON.Texture("src/textures/logo.svg", scene); // Logo texture
+    logo.material = logoMaterial;
+
+    // Si votre logo a de la transparence, vous pouvez activer le mode alpha
+    logoMaterial.diffuseTexture.hasAlpha = true;
 
     // =======================
     // Création de la Lumière
