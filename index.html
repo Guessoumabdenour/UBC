@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BARBARE</title>
+    <!-- Inclure la bibliothèque Babylon.JS -->
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <!-- Inclure le moteur de physique Cannon.js -->
+    <script src="https://cdn.babylonjs.com/cannon.js"></script>
+    <style>
+        /* Ensure no padding, margins, or scrollbars */
+        body, html {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100%; /* Full height of the viewport */
+        }
+
+        /* Make canvas fill the entire screen */
+        canvas {
+            display: block;
+            width: 100vw; /* Full width of the viewport */
+            height: 100vh; /* Full height of the viewport */
+        }
+    </style>
+</head>
+<body>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <!-- Inclure votre fichier JavaScript principal -->
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>
